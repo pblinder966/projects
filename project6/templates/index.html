@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Animal Herd Detection | Task 1</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg: #0b1020;
+      --card: #121833;
+      --primary: #4f7cff;
+      --accent: #20c997;
+      --text: #e9ecf1;
+      --muted: #9aa3b2;
+      --border: #22295a;
+      --radius: 14px;
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+    }
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: radial-gradient(1200px 600px at 10% -10%, #1a225a 0%, var(--bg) 60%);
+      color: var(--text);
+      padding: 24px;
+    }
+    .card {
+      width: 100%;
+      max-width: 560px;
+      background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 22px;
+    }
+    .header {
+      display: grid;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 22px;
+      letter-spacing: .2px;
+    }
+    .header p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .upload {
+      border: 2px dashed var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      text-align: center;
+      margin: 14px 0 10px;
+      background: rgba(255,255,255,.03);
+    }
+    .upload input[type="file"] {
+      display: block;
+      width: 100%;
+      color: var(--muted);
+      margin: 10px 0 6px;
+    }
+    .actions {
+      display: grid;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    button {
+      appearance: none;
+      border: 1px solid rgba(79,124,255,.6);
+      background: linear-gradient(180deg, rgba(79,124,255,.35), rgba(79,124,255,.15));
+      color: white;
+      padding: 10px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    button:active { transform: translateY(1px); }
+    .tips {
+      margin-top: 12px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .footer {
+      margin-top: 12px;
+      font-size: 12px;
+      color: var(--muted);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <div class="header">
+      <h1>🐄 Animal Herd Detection</h1>
+      <p>Task 1 • YOLO + OpenCV • Flask Front-End</p>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data">
+      <div class="upload">
+        <strong>Upload an image</strong>
+        <input type="file" name="file" accept="image/*" required />
+        <small class="tips">Supported formats: JPG, PNG, JPEG</small>
+      </div>
+
+      <div class="actions">
+        <button type="submit">Detect Animals & Herds</button>
+      </div>
+    </form>
+
+    <div class="tips">
+      <strong>How it works:</strong>
+      <ul>
+        <li>Detects animals using YOLOv8.</li>
+        <li>Groups nearby animals into herds using clustering.</li>
+        <li>Optionally marks herd location on OpenStreetMap.</li>
+      </ul>
+    </div>
+
+    <div class="footer">
+      Smart Agriculture / Wildlife Monitoring Demo
+    </div>
+  </main>
+</body>
+</html>

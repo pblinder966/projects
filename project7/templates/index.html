@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>NASA Asteroids - NeoWs</title>
+    <style>
+        body{
+            font-family: Arial;
+            background-color: #0b0c2a;
+            color: white;
+            padding: 20px;
+        }
+        h1{
+            text-align:center;
+            color:#00d9ff;
+        }
+        .card{
+            background:#1c1f4a;
+            padding:15px;
+            margin:10px;
+            border-radius:10px;
+        }
+        .hazard{
+            color:red;
+            font-weight:bold;
+        }
+        .safe{
+            color:lightgreen;
+            font-weight:bold;
+        }
+        input{
+            padding:5px;
+        }
+        button{
+            padding:5px 10px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>NASA Near Earth Asteroids</h1>
+
+<form method="GET" action="">
+    <label>Enter Date (YYYY-MM-DD): </label>
+    <input type="text" id="dateInput" placeholder="2026-02-20">
+    <button type="button" onclick="goToDate()">Search</button>
+</form>
+
+<hr>
+
+{% if data.near_earth_objects %}
+
+    {% for date, asteroids in data.near_earth_objects.items() %}
+        <h2>Date: {{ date }}</h2>
+
+        {% for asteroid in asteroids %}
+            <div class="card">
+                <p><strong>Name:</strong> {{ asteroid.name }}</p>
+                <p><strong>Magnitude:</strong> {{ asteroid.absolute_magnitude_h }}</p>
+
+                <p><strong>Estimated Diameter (meters):</strong>
+                    {{ asteroid.estimated_diameter.meters.estimated_diameter_min }}
+                    -
+                    {{ asteroid.estimated_diameter.meters.estimated_diameter_max }}
+                </p>
+
+                <p>
+                    <strong>Potentially Hazardous:</strong>
+                    {% if asteroid.is_potentially_hazardous_asteroid %}
+                        <span class="hazard">YES</span>
+                    {% else %}
+                        <span class="safe">NO</span>
+                    {% endif %}
+                </p>
+            </div>
+        {% endfor %}
+    {% endfor %}
+
+{% else %}
+    <p>No Data Available</p>
+{% endif %}
+
+<script>
+    function goToDate(){
+        var date = document.getElementById("dateInput").value;
+        if(date){
+            window.location.href = "/" + date;
+        }
+    }
+</script>
+
+</body>
+</html>

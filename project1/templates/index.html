@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Email Scraper System</title>
+    <style>
+        body {
+            font-family: Arial;
+            background: #f4f6f8;
+        }
+        .box {
+            width: 900px;
+            margin: 40px auto;
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        button {
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+        }
+        th {
+            background: #f1f1f1;
+        }
+        #status {
+            margin-bottom: 15px;
+            font-weight: bold;
+            color: #007bff;
+        }
+    </style>
+</head>
+<body>
+
+<div class="box">
+    <h2>Email Scraper (Full Website Crawl)</h2>
+
+    <div id="status"></div>
+
+    <form method="post" enctype="multipart/form-data" onsubmit="showMessage()">
+        <input type="file" name="excel_file" required>
+        <button type="submit">Start Scraping</button>
+    </form>
+
+    {% if results %}
+    <table>
+        <tr>
+            <th>Company URL</th>
+            <th>Emails Found</th>
+        </tr>
+        {% for row in results %}
+        <tr>
+            <td>{{ row.url }}</td>
+            <td>{{ row.emails }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% endif %}
+
+    {% if file_ready %}
+        <br>
+        <a href="/download">
+            <button>Download Excel File</button>
+        </a>
+    {% endif %}
+</div>
+
+<script>
+function showMessage() {
+    document.getElementById("status").innerText =
+        "Searching emails, please wait...";
+}
+</script>
+
+</body>
+</html>

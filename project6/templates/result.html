@@ -1,0 +1,70 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Detection Results</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: Arial, sans-serif; background:#0b1020; color:#fff; margin:0; padding:24px; text-align:center; }
+    .card { max-width:900px; margin:0 auto; background:#121833; border-radius:12px; padding:20px; }
+    .images { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    img { width:100%; border-radius:8px; border:2px solid #4f7cff; }
+    button { padding:10px 16px; background:#20c997; border:none; border-radius:8px; cursor:pointer; }
+    @media (max-width:700px){ .images{grid-template-columns:1fr;} }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Detection Results</h2>
+    <p>Total Animals: <b>{{ total_animals }}</b></p>
+    <p>Herds Detected: <b>{{ herd_count }}</b></p>
+
+    <div class="images">
+      <div>
+        <h4>Original</h4>
+        <img src="{{ url_for('static', filename='uploads/' + input_image) }}">
+      </div>
+      <div>
+        <h4>Detected</h4>
+        <img src="{{ url_for('static', filename='uploads/' + output_image) }}">
+      </div>
+    </div>
+
+    <br>
+    <form id="mapForm" action="{{ url_for('map_view') }}" method="post">
+      <input type="hidden" name="lat" id="lat">
+      <input type="hidden" name="lon" id="lon">
+      <input type="hidden" name="count" value="{{ total_animals }}">
+      <button type="submit">📍 Show Herd on My Location (Map)</button>
+    </form>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+    
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          function(position) {
+            document.getElementById("lat").value = position.coords.latitude;
+            document.getElementById("lon").value = position.coords.longitude;
+          },
+          function(error) {
+            console.log("Location denied or unavailable.");
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0   // IMPORTANT → Forces fresh location
+          }
+        );
+      }
+    
+    });
+    </script>
+    
+    
+    
+    
+</body>
+</html>
