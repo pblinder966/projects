@@ -10,9 +10,7 @@ app = Flask(__name__)
 UPLOAD_FOLDER = "uploads"
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
-# =====================
-# GLOBAL STATE
-# =====================
+
 all_chunks = []
 all_sources = []
 index = None
@@ -20,9 +18,6 @@ index = None
 model = SentenceTransformer("all-MiniLM-L6-v2")
 
 
-# =====================
-# PDF LOADER
-# =====================
 def load_pdf(file_path):
     reader = PdfReader(file_path)
     text = ""
@@ -35,9 +30,7 @@ def load_pdf(file_path):
     return text
 
 
-# =====================
-# SPLIT TEXT
-# =====================
+
 def split_text(text, chunk_size=500, overlap=50):
     chunks = []
     start = 0
@@ -50,19 +43,13 @@ def split_text(text, chunk_size=500, overlap=50):
     return chunks
 
 
-# =====================
-# EMBEDDINGS
-# =====================
+
 def embed(texts):
     return model.encode(texts)
 
 def embed_query(query):
     return model.encode([query])
-
-
-# =====================
-# FAISS INDEX
-# =====================
+    
 def add_to_index(embeddings):
     global index
 
@@ -75,9 +62,6 @@ def add_to_index(embeddings):
     index.add(embeddings)
 
 
-# =====================
-# RETRIEVAL
-# =====================
 def retrieve(query, k=4, threshold=1.2):
     global index, all_chunks, all_sources
 
@@ -98,9 +82,7 @@ def retrieve(query, k=4, threshold=1.2):
     return results
 
 
-# =====================
-# ANSWER GENERATION
-# =====================
+
 def generate_answer(query, results):
     if not results:
         return {
@@ -120,9 +102,7 @@ def generate_answer(query, results):
     }
 
 
-# =====================
-# HOME PAGE
-# =====================
+
 @app.route("/", methods=["GET", "POST"])
 def home():
     global all_chunks, all_sources, index
@@ -153,9 +133,7 @@ def home():
     return render_template("index.html", message=message, ask_ready=ask_ready)
 
 
-# =====================
-# ASK API (AJAX)
-# =====================
+
 @app.route("/ask", methods=["POST"])
 def ask():
     if index is None:
@@ -168,8 +146,5 @@ def ask():
     return jsonify(response)
 
 
-# =====================
-# RUN APP
-# =====================
 if __name__ == "__main__":
     app.run(debug=True)
