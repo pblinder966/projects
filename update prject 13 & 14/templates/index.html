@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>DOCMIND — Intelligent PDF Oracle</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Mono:wght@300;400&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink: #0d0c0b;
+      --parchment: #f5f0e8;
+      --gold: #c9a84c;
+      --gold-light: #e8c97a;
+      --ember: #c94c2e;
+      --cream: #ede8df;
+      --muted: #8a8070;
+      --line: rgba(201,168,76,0.2);
+      --glass: rgba(13,12,11,0.7);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background-color: var(--ink);
+      color: var(--parchment);
+      font-family: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── NOISE TEXTURE OVERLAY ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 1;
+      opacity: 0.6;
+    }
+
+    /* ── AMBIENT GLOW ── */
+    .ambient {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(120px);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .ambient-1 {
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(201,168,76,0.08) 0%, transparent 70%);
+      top: -200px; right: -100px;
+    }
+    .ambient-2 {
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, rgba(201,76,46,0.06) 0%, transparent 70%);
+      bottom: 10%; left: -100px;
+    }
+
+    /* ── LAYOUT ── */
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 2rem;
+      position: relative;
+      z-index: 10;
+    }
+
+    /* ── HEADER ── */
+    header {
+      padding: 3.5rem 0 2rem;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 3rem;
+      position: relative;
+    }
+
+    .eyebrow {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.3em;
+      color: var(--gold);
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+    .eyebrow::after {
+      content: '';
+      display: inline-block;
+      width: 40px;
+      height: 1px;
+      background: var(--gold);
+      opacity: 0.6;
+    }
+
+    h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(2.8rem, 6vw, 4.5rem);
+      font-weight: 800;
+      line-height: 0.95;
+      letter-spacing: -0.02em;
+      color: var(--parchment);
+    }
+    h1 em {
+      font-style: italic;
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 300;
+      color: var(--gold);
+    }
+
+    .tagline {
+      margin-top: 1.2rem;
+      font-size: 1.05rem;
+      color: var(--muted);
+      font-style: italic;
+      font-weight: 300;
+      letter-spacing: 0.01em;
+    }
+
+    /* ── STATUS STRIP ── */
+    .status-strip {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      margin-top: 2rem;
+      padding: 0.8rem 1.2rem;
+      border: 1px solid var(--line);
+      background: rgba(201,168,76,0.03);
+    }
+
+    .status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--muted);
+      flex-shrink: 0;
+      transition: background 0.4s;
+    }
+    .status-dot.active { background: #4caf7d; box-shadow: 0 0 8px #4caf7d88; animation: pulse 2s infinite; }
+    .status-dot.error  { background: var(--ember); }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .status-text {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+    }
+    .status-count {
+      margin-left: auto;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--gold);
+      opacity: 0.7;
+    }
+
+    /* ── UPLOAD SECTION ── */
+    .section-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.62rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .section-label::before {
+      content: '';
+      width: 24px; height: 1px;
+      background: var(--gold);
+      opacity: 0.5;
+    }
+
+    .upload-zone {
+      border: 1px dashed rgba(201,168,76,0.35);
+      padding: 2.5rem 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      background: rgba(201,168,76,0.02);
+    }
+    .upload-zone:hover, .upload-zone.dragover {
+      border-color: var(--gold);
+      background: rgba(201,168,76,0.05);
+    }
+    .upload-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+
+    .upload-icon {
+      font-size: 2rem;
+      margin-bottom: 0.8rem;
+      opacity: 0.5;
+      display: block;
+    }
+
+    .upload-zone h3 {
+      font-family: 'Syne', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--parchment);
+      margin-bottom: 0.4rem;
+    }
+    .upload-zone p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    .file-list {
+      margin-top: 1rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .file-tag {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      padding: 0.3rem 0.7rem;
+      border: 1px solid var(--line);
+      color: var(--gold);
+      background: rgba(201,168,76,0.05);
+      max-width: 200px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* ── BUTTONS ── */
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.85rem 2rem;
+      background: var(--gold);
+      color: var(--ink);
+      font-family: 'Syne', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      border: none;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-primary::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, transparent 30%, rgba(255,255,255,0.15) 50%, transparent 70%);
+      transform: translateX(-100%);
+      transition: transform 0.5s ease;
+    }
+    .btn-primary:hover::after { transform: translateX(100%); }
+    .btn-primary:hover {
+      background: var(--gold-light);
+      transform: translateY(-1px);
+      box-shadow: 0 8px 24px rgba(201,168,76,0.25);
+    }
+    .btn-primary:active { transform: translateY(0); }
+
+    .btn-icon {
+      width: 52px; height: 52px;
+      background: var(--gold);
+      border: none;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.25s;
+      flex-shrink: 0;
+    }
+    .btn-icon:hover {
+      background: var(--gold-light);
+      box-shadow: 0 4px 16px rgba(201,168,76,0.3);
+    }
+    .btn-icon svg { width: 16px; height: 16px; fill: var(--ink); }
+
+    /* ── DIVIDER ── */
+    .divider {
+      height: 1px;
+      background: var(--line);
+      margin: 2.5rem 0;
+      position: relative;
+    }
+    .divider::after {
+      content: '◆';
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      color: var(--gold);
+      font-size: 0.5rem;
+      background: var(--ink);
+      padding: 0 0.8rem;
+    }
+
+    /* ── CHAT ── */
+    .chat-section { display: none; }
+    .chat-section.visible { display: block; }
+
+    /* ensure all content above ambient glows */
+    header, form, .divider, footer { position: relative; z-index: 10; }
+
+    .chat-window {
+      border: 1px solid var(--line);
+      background: rgba(13,12,11,0.6);
+      min-height: 320px;
+      max-height: 480px;
+      overflow-y: auto;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+      scroll-behavior: smooth;
+    }
+    .chat-window::-webkit-scrollbar { width: 4px; }
+    .chat-window::-webkit-scrollbar-track { background: transparent; }
+    .chat-window::-webkit-scrollbar-thumb { background: var(--line); }
+
+    .msg-wrap {
+      margin-bottom: 1.5rem;
+      animation: fadeUp 0.3s ease both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .msg-meta {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.6rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+    }
+    .msg-meta.user { color: var(--gold); }
+    .msg-meta.assistant { color: var(--muted); }
+
+    .msg-bubble {
+      font-size: 0.98rem;
+      line-height: 1.75;
+      font-weight: 300;
+    }
+    .msg-bubble.user {
+      color: var(--parchment);
+      font-style: italic;
+    }
+    .msg-bubble.assistant {
+      color: var(--cream);
+      padding-left: 1rem;
+      border-left: 2px solid var(--line);
+    }
+
+    .msg-source {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.6rem;
+      color: var(--gold);
+      opacity: 0.6;
+      margin-top: 0.5rem;
+    }
+
+    .fallback-card {
+      border: 1px solid rgba(201,76,46,0.3);
+      background: rgba(201,76,46,0.04);
+      padding: 1rem 1.2rem;
+    }
+    .fallback-card p { color: var(--muted); font-size: 0.9rem; font-style: italic; }
+    .fallback-card a {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin-top: 0.6rem;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      color: var(--ember);
+      text-decoration: none;
+      text-transform: uppercase;
+      transition: color 0.2s;
+    }
+    .fallback-card a:hover { color: var(--gold); }
+
+    /* ── QUERY INPUT ── */
+    .query-row {
+      display: flex;
+      gap: 0;
+      border: 1px solid var(--line);
+      transition: border-color 0.3s;
+    }
+    .query-row:focus-within { border-color: rgba(201,168,76,0.55); }
+
+    .query-input {
+      flex: 1;
+      background: rgba(245,240,232,0.04);
+      border: none;
+      outline: none;
+      padding: 1rem 1.2rem;
+      color: var(--parchment);
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1rem;
+      font-style: italic;
+      font-weight: 300;
+    }
+    .query-input::placeholder { color: var(--muted); opacity: 0.7; }
+
+    /* ── THINKING ── */
+    .thinking {
+      display: none;
+      align-items: center;
+      gap: 0.8rem;
+      padding: 1rem 1.5rem;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+    }
+    .thinking.show { display: flex; }
+    .dots span {
+      display: inline-block;
+      width: 4px; height: 4px;
+      border-radius: 50%;
+      background: var(--gold);
+      margin: 0 1px;
+      animation: blink 1.4s infinite both;
+    }
+    .dots span:nth-child(2) { animation-delay: 0.2s; }
+    .dots span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes blink {
+      0%, 80%, 100% { opacity: 0.1; }
+      40% { opacity: 1; }
+    }
+
+    /* ── FLASH MESSAGE ── */
+    .flash {
+      padding: 0.9rem 1.2rem;
+      border: 1px solid rgba(76,175,125,0.3);
+      background: rgba(76,175,125,0.05);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      color: #4caf7d;
+      letter-spacing: 0.08em;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      animation: fadeUp 0.4s ease;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      margin-top: 5rem;
+      padding: 2rem 0;
+      border-top: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    footer p {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.6rem;
+      color: var(--muted);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      opacity: 0.5;
+    }
+
+    .ornament {
+      color: var(--gold);
+      font-size: 0.7rem;
+      opacity: 0.4;
+    }
+
+    /* ── SCROLL TO TOP ── */
+    .scroll-btn {
+      position: fixed;
+      bottom: 2rem; right: 2rem;
+      width: 36px; height: 36px;
+      border: 1px solid var(--line);
+      background: var(--glass);
+      color: var(--gold);
+      font-size: 1rem;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      transition: all 0.3s;
+      z-index: 50;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .scroll-btn.visible { opacity: 1; pointer-events: all; }
+    .scroll-btn:hover { background: rgba(201,168,76,0.1); border-color: var(--gold); }
+
+    /* ── UPLOAD PROGRESS ── */
+    .progress-bar-wrap {
+      display: none;
+      height: 2px;
+      background: rgba(201,168,76,0.15);
+      margin-top: 0.8rem;
+      overflow: hidden;
+    }
+    .progress-bar-wrap.show { display: block; }
+    .progress-bar {
+      height: 100%;
+      background: var(--gold);
+      width: 0%;
+      transition: width 0.4s ease;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="ambient ambient-1"></div>
+  <div class="ambient ambient-2"></div>
+
+  <div class="container">
+
+    <!-- ══ HEADER ══ -->
+    <header>
+      <div class="eyebrow">Semantic PDF Oracle</div>
+      <h1>DOC<em>MIND</em></h1>
+      <p class="tagline">Upload your documents. Ask anything. Receive illumination.</p>
+
+      <!-- Status Strip -->
+      <div class="status-strip">
+        <div class="status-dot {% if ask_ready %}active{% endif %}" id="statusDot"></div>
+        <span class="status-text" id="statusText">
+          {% if ask_ready %}INDEX READY — ORACLE AWAITS{% else %}AWAITING DOCUMENTS{% endif %}
+        </span>
+        <span class="status-count" id="statusCount">{{ all_sources | length if all_sources else 0 }} chunks indexed</span>
+      </div>
+    </header>
+
+    <!-- ══ FLASH ══ -->
+    {% if message %}
+    <div class="flash">
+      <span>✦</span> {{ message }}
+    </div>
+    {% endif %}
+
+    <!-- ══ UPLOAD ══ -->
+    <form method="POST" enctype="multipart/form-data" id="uploadForm">
+
+      <div class="section-label">I. Ingest Documents</div>
+
+      <div class="upload-zone" id="dropZone">
+        <input type="file" name="pdf" accept=".pdf" multiple id="fileInput">
+        <span class="upload-icon">⬡</span>
+        <h3>Drop PDF documents here</h3>
+        <p>or click to browse your archive</p>
+        <div class="file-list" id="fileList"></div>
+      </div>
+
+      <div class="progress-bar-wrap" id="progressWrap">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+
+      <br>
+      <button type="submit" class="btn-primary" id="uploadBtn">
+        <span>▶</span> Process Documents
+      </button>
+
+    </form>
+
+    <div class="divider"></div>
+
+    <!-- ══ CHAT ══ -->
+    <div class="chat-section {% if ask_ready %}visible{% endif %}" id="chatSection">
+
+      <div class="section-label">II. Query the Oracle</div>
+
+      <div class="chat-window" id="chatWindow">
+        <div class="msg-wrap">
+          <div class="msg-meta assistant">System</div>
+          <div class="msg-bubble assistant">
+            The index is loaded. I am ready to answer your questions based on the ingested documents. Ask me anything contained within them.
+          </div>
+        </div>
+      </div>
+
+      <div class="thinking" id="thinkingIndicator">
+        <div class="dots">
+          <span></span><span></span><span></span>
+        </div>
+        Consulting the documents
+      </div>
+
+      <div class="query-row">
+        <input
+          type="text"
+          class="query-input"
+          id="queryInput"
+          placeholder="What would you like to know from the documents?"
+          autocomplete="off"
+        />
+        <button class="btn-icon" id="sendBtn" title="Ask">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+          </svg>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- ══ FOOTER ══ -->
+    <footer>
+      <p>DocMind &mdash; RAG Intelligence Engine</p>
+      <div class="ornament">✦ ◆ ✦</div>
+      <p>Powered by FAISS · SentenceTransformers</p>
+    </footer>
+
+  </div>
+
+  <!-- Scroll top -->
+  <button class="scroll-btn" id="scrollBtn" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+  <script>
+    // ── FILE INPUT ──
+    const fileInput = document.getElementById('fileInput');
+    const fileList  = document.getElementById('fileList');
+    const dropZone  = document.getElementById('dropZone');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const progressWrap = document.getElementById('progressWrap');
+    const progressBar  = document.getElementById('progressBar');
+
+    fileInput.addEventListener('change', () => updateFileList(fileInput.files));
+
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      fileInput.files = e.dataTransfer.files;
+      updateFileList(e.dataTransfer.files);
+    });
+
+    function updateFileList(files) {
+      fileList.innerHTML = '';
+      [...files].forEach(f => {
+        const tag = document.createElement('div');
+        tag.className = 'file-tag';
+        tag.textContent = f.name;
+        fileList.appendChild(tag);
+      });
+    }
+
+    // Upload progress animation
+    document.getElementById('uploadForm').addEventListener('submit', () => {
+      progressWrap.classList.add('show');
+      let w = 0;
+      const interval = setInterval(() => {
+        w = Math.min(w + Math.random() * 12, 85);
+        progressBar.style.width = w + '%';
+      }, 200);
+      setTimeout(() => { clearInterval(interval); progressBar.style.width = '100%'; }, 3000);
+    });
+
+    // ── CHAT ──
+    const chatWindow = document.getElementById('chatWindow');
+    const queryInput = document.getElementById('queryInput');
+    const sendBtn    = document.getElementById('sendBtn');
+    const thinking   = document.getElementById('thinkingIndicator');
+
+    function appendMessage(role, content, sources) {
+      const wrap = document.createElement('div');
+      wrap.className = 'msg-wrap';
+
+      const meta = document.createElement('div');
+      meta.className = `msg-meta ${role}`;
+      meta.textContent = role === 'user' ? 'You' : 'Oracle';
+
+      const bubble = document.createElement('div');
+      bubble.className = `msg-bubble ${role}`;
+      bubble.textContent = content;
+
+      wrap.appendChild(meta);
+      wrap.appendChild(bubble);
+
+      if (sources) {
+        const src = document.createElement('div');
+        src.className = 'msg-source';
+        src.textContent = '↳ ' + sources;
+        wrap.appendChild(src);
+      }
+
+      chatWindow.appendChild(wrap);
+      chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+
+    function appendFallback(query) {
+      const wrap = document.createElement('div');
+      wrap.className = 'msg-wrap';
+      wrap.innerHTML = `
+        <div class="msg-meta assistant">Oracle</div>
+        <div class="fallback-card">
+          <p>The documents do not contain an answer to this query.</p>
+          <a href="https://www.google.com/search?q=${encodeURIComponent(query)}" target="_blank">
+            ↗ Search on Google
+          </a>
+        </div>`;
+      chatWindow.appendChild(wrap);
+      chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+
+    async function ask() {
+      const query = queryInput.value.trim();
+      if (!query) return;
+
+      queryInput.value = '';
+      appendMessage('user', query);
+
+      thinking.classList.add('show');
+      sendBtn.disabled = true;
+
+      try {
+        const fd = new FormData();
+        fd.append('query', query);
+
+        const res = await fetch('/ask', { method: 'POST', body: fd });
+        const data = await res.json();
+
+        thinking.classList.remove('show');
+        sendBtn.disabled = false;
+
+        if (data.type === 'answer') {
+          // extract sources from bracketed text
+          const sourceMatch = data.message.match(/\[([^\]]+)\]/g);
+          const sources = sourceMatch ? [...new Set(sourceMatch.map(s => s.slice(1,-1)))].join(', ') : null;
+          const cleanText = data.message.replace(/\[[^\]]+\]\s*/g, '').trim();
+          appendMessage('assistant', cleanText, sources);
+        } else if (data.type === 'fallback') {
+          appendFallback(query);
+        } else {
+          appendMessage('assistant', data.message);
+        }
+      } catch(err) {
+        thinking.classList.remove('show');
+        sendBtn.disabled = false;
+        appendMessage('assistant', 'A network error occurred. Please try again.');
+      }
+    }
+
+    sendBtn.addEventListener('click', ask);
+    queryInput.addEventListener('keydown', e => { if (e.key === 'Enter') ask(); });
+
+    // ── SCROLL BTN ──
+    const scrollBtn = document.getElementById('scrollBtn');
+    window.addEventListener('scroll', () => {
+      scrollBtn.classList.toggle('visible', window.scrollY > 300);
+    });
+  </script>
+</body>
+</html>
